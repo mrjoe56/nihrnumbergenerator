@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<extension key="nihrnumbergenerator" type="module">
+  <file>nihrnumbergenerator</file>
+  <name>NIHR BioResource Number Generator Extension</name>
+  <description>This extension generates various numbers to be used in the NIHR BioResource CiviCRM</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>Jaap Jansma</author>
+    <email>jaap.jansma@civicoop.org</email>
+  </maintainer>
+  <urls>
+    <url desc="Main Extension Page">http://lab.extensions</url>
+    <url desc="Documentation">http://FIXME</url>
+    <url desc="Support">http://FIXME</url>
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2019-04-10</releaseDate>
+  <version>1.0</version>
+  <develStage>under development</develStage>
+  <compatibility>
+    <ver>5.0</ver>
+  </compatibility>
+  <civix>
+    <namespace>CRM/Nihrnumbergenerator</namespace>
+  </civix>
+  <requires>
+    <ext>de.systopia.identitytracker</ext>
+    <ext>nihrconfigitems</ext>
+  </requires>
+</extension>
