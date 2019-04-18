@@ -6,6 +6,7 @@ use CRM_Nihrnumbergenerator_ExtensionUtil as E;
 function nihrnumbergenerator_civicrm_post($op, $objectName, $id, &$objectRef) {
   if ($objectName == 'Individual' && $op == 'create') {
     CRM_Nihrnumbergenerator_VolunteerNumberGenerator::createNewNumberForContact($id);
+    CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewNumberForContact($id);
   }
   if ($objectName == 'Case' && $op == 'create') {
     CRM_Core_Transaction::addCallback(
