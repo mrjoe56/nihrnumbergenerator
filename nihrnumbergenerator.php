@@ -7,6 +7,14 @@ function nihrnumbergenerator_civicrm_post($op, $objectName, $id, &$objectRef) {
   if ($objectName == 'Individual' && $op == 'create') {
     CRM_Nihrnumbergenerator_VolunteerNumberGenerator::createNewNumberForContact($id);
   }
+  if ($objectName == 'Case' && $op == 'create') {
+    CRM_Core_Transaction::addCallback(
+      CRM_Core_Transaction::PHASE_POST_COMMIT,
+      function() use ($id) {
+        CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::createNewNumberForCase($id);
+      }
+    );
+  }
 }
 
 /**
