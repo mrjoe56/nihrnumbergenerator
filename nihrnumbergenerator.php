@@ -8,13 +8,51 @@ function nihrnumbergenerator_civicrm_post($op, $objectName, $id, &$objectRef) {
     CRM_Nihrnumbergenerator_VolunteerNumberGenerator::createNewNumberForContact($id);
     CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewNumberForContact($id);
   }
-  if ($objectName == 'Case' && $op == 'create') {
-    CRM_Core_Transaction::addCallback(
-      CRM_Core_Transaction::PHASE_POST_COMMIT,
-      function() use ($id) {
-        CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::createNewNumberForCase($id);
-      }
+  if ($objectName == 'Activity' && $op == 'create') {
+    if ($objectRef->case_id && CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::isValidActivityType($objectRef->activity_type_id)) {
+      CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::createNewNumberForCase($objectRef->case_id);
+    }
+  }
+  if ($objectName == 'NihrStudy' && $op == 'create') {
+    CRM_Nihrnumbergenerator_StudyNumberGenerator::generateStudyNumber($id);
+  }
+}
+
+/**
+ * Implements hook_civicrm_check().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_check
+ */
+function nihrnumbergenerator_civicrm_check(&$messages) {
+  try {
+    $config = CRM_Nihrnumbergenerator_Config::singleton();
+    if (!$config->cambridgeCenterId) {
+      $messages[] = new CRM_Utils_Check_Message(
+        'nihrnumbergenerator_cambridge_center_missing',
+        E::ts('A contact of type center and with name %1 is missing from your system. Create a center with this name.', [1=>$config->cambridgeCenterName]),
+        E::ts('%1 missing', [1=>$config->cambridgeCenterName]),
+        'critical',
+        'fa-exclamation-circle'
+      );
+    }
+  } catch (\Exception $e) {
+    $messages[] = new CRM_Utils_Check_Message(
+      'nihrnumbergenerator_config_failed',
+      E::ts('Failed to instantiate Config in NIHR BioResource Number Generator Extension. Are custom fields renamed? Check and change nihrnumbergenrator/CRM/Nihrnumbergenerator/Config.php'),
+      E::ts('NIHR BioResource Number Generator Extension failing'),
+      'critical',
+      'fa-exclamation-circle'
     );
+  }
+}
+
+function nihrnumbergenerator_civicrm_pageRun(&$page) {
+  if ($page instanceof CRM_Contact_Page_DashBoard) {
+    $messages = array();
+    nihrnumbergenerator_civicrm_check($messages);
+    foreach($messages as $message) {
+      CRM_Core_Session::setStatus($message->getMessage(), $message->getTitle(), 'error');
+    }
   }
 }
 

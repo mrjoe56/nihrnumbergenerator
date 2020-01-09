@@ -26,5 +26,6 @@
   <requires>
     <ext>de.systopia.identitytracker</ext>
     <ext>nihrconfigitems</ext>
+    <ext>nihrbackbone</ext>
   </requires>
 </extension>
