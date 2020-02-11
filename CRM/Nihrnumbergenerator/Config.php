@@ -22,11 +22,7 @@ class CRM_Nihrnumbergenerator_Config {
 
   public $projectDataTableName = 'civicrm_value_nihr_project_data';
 
-  public $projectDataStudyIdColumnName = 'npd_study_id';
-
-  public $studyTableName = 'civicrm_nihr_study';
-
-  public $studyNrColumnName = 'study_number';
+  public $projectDataStudyNumberColumnName = 'npd_study_number';
 
   public $participationDataProjectIdColumnName = 'nvpd_project_id';
 

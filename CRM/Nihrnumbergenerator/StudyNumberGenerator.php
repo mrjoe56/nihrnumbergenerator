@@ -6,33 +6,36 @@
 
 class CRM_Nihrnumbergenerator_StudyNumberGenerator {
 
-  public static function generateStudyNumber($study_id) {
-    $config = CRM_Nihrnumbergenerator_Config::singleton();
-    $study = civicrm_api3('NihrStudy', 'getsingle', ['id' => $study_id]);
-    $prefix = 'NBR';
-    if (isset($study['centre_study_origin_id']) && $study['centre_study_origin_id'] == $config->cambridgeCenterId) {
-      $prefix = 'CBR';
+  /**
+   * Method to generate the study number
+   *
+   * @param $studyId
+   * @param $objectRef
+   * @throws API_Exception when unable to save study number
+   */
+  public static function generateStudyNumber($studyId, $objectRef) {
+    // only if study campaign type
+    if (isset($objectRef->campaign_type_id)) {
+      if ($objectRef->campaign_type_id == CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCampaignTypeId()) {
+        $prefix = 'NBR';
+        $centre = CRM_Nihrbackbone_NihrProject::getCentreOfOrigin($studyId);
+        if ($centre && $centre == CRM_Nihrnumbergenerator_Config::singleton()->cambridgeCenterName) {
+          $prefix = 'CBR';
+        }
+        // add prefix to id and save in study number field
+        $studyNumber = $prefix . $studyId;
+        $studyNumberCustomField = "custom_" . CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectCustomField('npd_study_number', 'id');
+        $apiParams = [
+          'id' => $studyId,
+          $studyNumberCustomField => $studyNumber,
+        ];
+        try {
+          civicrm_api3('Campaign', 'create', $apiParams);
+        }
+        catch (CiviCRM_API3_Exception $ex) {
+          throw new API_Exception('Could not generate a study number, error message from Campaign create API: ' . $ex->getMessage());
+        }
+      }
     }
-
-    $existingCheckSql = "SELECT COUNT(*) FROM `{$config->studyTableName}` WHERE `{$config->studyNrColumnName}` = %1";
-    $newSequenceSql = "SELECT COUNT(*) FROM `{$config->studyTableName}` WHERE `{$config->studyNrColumnName}` LIKE '{$prefix}%'";
-    $newSequenceNr = CRM_Core_DAO::singleValueQuery($newSequenceSql);
-    $studyNr = $prefix.$newSequenceNr;
-    do {
-      $newSequenceNr++;
-      $studyNr = $prefix.$newSequenceNr;
-      $sqlParams = array(
-        1 => array($studyNr, 'String'),
-      );
-      $existAlready = CRM_Core_DAO::singleValueQuery($existingCheckSql, $sqlParams);
-    } while ($existAlready);
-
-    $updateSql = "UPDATE `{$config->studyTableName}` SET `{$config->studyNrColumnName}` = %1 WHERE `id` = %2";
-    $sqlParams = array (
-      1 => array($studyNr, 'String'),
-      2 => array($study_id, 'Integer')
-    );
-    CRM_Core_DAO::executeQuery($updateSql, $sqlParams);
   }
-
 }
