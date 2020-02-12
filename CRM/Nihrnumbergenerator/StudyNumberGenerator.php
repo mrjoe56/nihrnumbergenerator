@@ -18,7 +18,7 @@ class CRM_Nihrnumbergenerator_StudyNumberGenerator {
     if (isset($objectRef->campaign_type_id)) {
       if ($objectRef->campaign_type_id == CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCampaignTypeId()) {
         $prefix = 'NBR';
-        $centre = CRM_Nihrbackbone_NihrProject::getCentreOfOrigin($studyId);
+        $centre = CRM_Nihrbackbone_NbrStudy::getCentreOfOrigin($studyId);
         if ($centre && $centre == CRM_Nihrnumbergenerator_Config::singleton()->cambridgeCenterName) {
           $prefix = 'CBR';
         }
