@@ -24,7 +24,7 @@ class CRM_Nihrnumbergenerator_StudyNumberGenerator {
         }
         // add prefix to id and save in study number field
         $studyNumber = $prefix . $studyId;
-        $studyNumberCustomField = "custom_" . CRM_Nihrbackbone_BackboneConfig::singleton()->getProjectCustomField('npd_study_number', 'id');
+        $studyNumberCustomField = "custom_" . CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCustomField('nsd_study_number', 'id');
         $apiParams = [
           'id' => $studyId,
           $studyNumberCustomField => $studyNumber,

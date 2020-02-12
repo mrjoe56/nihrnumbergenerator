@@ -12,9 +12,8 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
     $sql = "SELECT `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` AS `id`
             FROM `{$config->participationDataTableName}` `participation_data`
             INNER JOIN `civicrm_case_contact` `case_contact` ON `case_contact`.`case_id` = `participation_data`.`entity_id`
-            INNER JOIN `{$config->projectDataTableName}` `project_data` ON `project_data`.`entity_id` = `participation_data`.`{$config->participationDataProjectIdColumnName}`
-            INNER JOIN `{$config->studyTableName}` `study` ON `study`.`id` = `project_data`.`{$config->projectDataStudyIdColumnName}`
-            WHERE `study`.`{$config->studyNrColumnName}` = %1 and `case_contact`.`contact_id` = %2 AND  `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` IS NOT NULL
+            INNER JOIN `{$config->studyDataTableName}` `study_data` ON `study_data`.`entity_id` = `participation_data`.`{$config->participationDataStudyIdColumnName}`
+            WHERE `study_data`.`{$config->studyNrColumnName}` = %1 and `case_contact`.`contact_id` = %2 AND  `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` IS NOT NULL
             ORDER BY id DESC
             LIMIT 0, 1";
     $sqlParams[1] = array($study_number, 'String');
@@ -28,9 +27,8 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
     $sequenceNrSql = "
             SELECT COUNT(DISTINCT `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}`)
             FROM `{$config->participationDataTableName}` `participation_data`
-            INNER JOIN `{$config->projectDataTableName}` `project_data` ON `project_data`.`entity_id` = `participation_data`.`{$config->participationDataProjectIdColumnName}`
-            INNER JOIN `{$config->studyTableName}` `study` ON `study`.`id` = `project_data`.`{$config->projectDataStudyIdColumnName}`
-            WHERE `study`.`{$config->studyNrColumnName}` = %1 AND `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` IS NOT NULL ";
+            INNER JOIN `{$config->studyDataTableName}` `study_data` ON `study_data`.`entity_id` = `participation_data`.`{$config->participationDataStudyIdColumnName}`
+            WHERE `study_data`.`{$config->studyNrColumnName}` = %1 AND `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` IS NOT NULL ";
     $sequenceNrSqlParams[1] = array($study_number, 'String');
     $newSequenceNr = CRM_Core_DAO::singleValueQuery($sequenceNrSql, $sequenceNrSqlParams);
     $sql = "SELECT COUNT(*) FROM `{$config->participationDataTableName}` WHERE `{$config->participationDataStudyParticipantIdColumnName}` = %1";
@@ -65,11 +63,10 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
     $config = CRM_Nihrnumbergenerator_Config::singleton();
     $sql ="SELECT
             `civicrm_case_contact`.`contact_id`,
-            `study`.`{$config->studyNrColumnName}` as `study_number`
+            `study_data`.`{$config->studyNrColumnName}` as `study_number`
           FROM `civicrm_case_contact`
           INNER JOIN `{$config->participationDataTableName}` `participation_data` ON `participation_data`.`entity_id` = `civicrm_case_contact`.`case_id`
-          INNER JOIN `{$config->projectDataTableName}` `project_data` ON `project_data`.`entity_id` = `participation_data`.`{$config->participationDataProjectIdColumnName}`
-          INNER JOIN `{$config->studyTableName}` `study` ON `study`.`id` = `project_data`.`{$config->projectDataStudyIdColumnName}`
+          INNER JOIN `{$config->studyDataTableName}` `study_data` ON `study_data`.`entity_id` = `participation_data`.`{$config->participationDataStudyIdColumnName}`
           WHERE `civicrm_case_contact`.`case_id` = %1";
 
     $sqlParams[1] = array($case_id, 'Integer');

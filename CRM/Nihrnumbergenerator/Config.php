@@ -18,15 +18,15 @@ class CRM_Nihrnumbergenerator_Config {
 
   public $participantIdColumnName = 'nva_participant_id';
 
-  public $participationDataTableName = 'civicrm_value_nihr_participation_data';
+  public $participationDataTableName = 'civicrm_value_nbr_participation_data';
 
-  public $projectDataTableName = 'civicrm_value_nihr_project_data';
+  public $studyDataTableName = 'civicrm_value_nbr_study_data';
 
-  public $projectDataStudyNumberColumnName = 'npd_study_number';
-
-  public $participationDataProjectIdColumnName = 'nvpd_project_id';
+  public $participationDataStudyIdColumnName = 'nvpd_study_id';
 
   public $participationDataStudyParticipantIdColumnName = 'nvpd_study_participant_id';
+
+  public $studyNrColumnName = 'nsd_study_number';
 
   public $cambridgeCenterName = 'NIHR BioResource Centre Cambridge';
 
