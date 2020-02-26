@@ -13,8 +13,13 @@ function nihrnumbergenerator_civicrm_post($op, $objectName, $id, &$objectRef) {
       CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::createNewNumberForCase($objectRef->case_id);
     }
   }
-  if ($objectName == 'NihrStudy' && $op == 'create') {
-    CRM_Nihrnumbergenerator_StudyNumberGenerator::generateStudyNumber($id);
+  if ($objectName == 'Campaign' && $op == 'create') {
+    if (CRM_Core_Transaction::isActive()) {
+      CRM_Core_Transaction::addCallback(CRM_Core_Transaction::PHASE_POST_COMMIT, 'CRM_Nihrnumbergenerator_StudyNumberGenerator::generateStudyNumber', [$id, $objectRef]);
+    }
+    else {
+      CRM_Nihrnumbergenerator_StudyNumberGenerator::generateStudyNumber($id, $objectRef);
+    }
   }
 }
 
