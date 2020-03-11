@@ -13,8 +13,7 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
    * Create settings for cbr/nbr study sequence
    */
   public function install() {
-    Civi::settings()->set('nbr_cbr_sequence', "0");
-    Civi::settings()->set('nbr_nbr_sequence', "0");
+    $this->setSequenceNumbers();
   }
 
   /**
@@ -23,6 +22,11 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
    * @return TRUE on success
    */
   public function upgrade_1010() {
+    $this->setSequenceNumbers();
+    return TRUE;
+  }
+
+  private function setSequenceNumbers() {
     $table = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyDataCustomGroup('table_name');
     $studyNumber = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCustomField('nsd_study_number', 'column_name');
     $query = "SELECT " . $studyNumber . " AS study_number FROM " . $table . " WHERE " . $studyNumber . " LIKE %1";
@@ -44,7 +48,6 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
       }
     }
     Civi::settings()->set('nbr_nbr_sequence', $highest);
-    return TRUE;
   }
 
   /**
