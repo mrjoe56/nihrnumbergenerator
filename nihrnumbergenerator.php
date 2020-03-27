@@ -9,7 +9,7 @@ function nihrnumbergenerator_civicrm_post($op, $objectName, $id, &$objectRef) {
     CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewNumberForContact($id);
   }
   if ($objectName == 'Activity' && $op == 'create') {
-    if ($objectRef->case_id && CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::isValidActivityType($objectRef->activity_type_id)) {
+    if (isset($objectRef->case_id) && CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::isValidActivityType($objectRef->activity_type_id)) {
       CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::createNewNumberForCase($objectRef->case_id);
     }
   }

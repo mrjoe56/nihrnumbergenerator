@@ -55,7 +55,7 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
   }
 
   /**
-   * Generate a new study participation number for a new particpation case.
+   * Generate a new study participation number for a new participation case.
    *
    * @param $case_id
    */
