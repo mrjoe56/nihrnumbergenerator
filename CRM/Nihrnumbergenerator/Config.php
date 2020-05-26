@@ -41,6 +41,7 @@ class CRM_Nihrnumbergenerator_Config {
     try {
       $this->cambridgeCenterId = civicrm_api3('Contact', 'getvalue', [
         'return' => 'id',
+        'contact_type' => 'Organization',
         'contact_sub_type' => '',
         'organization_name' => $this->cambridgeCenterName,
       ]);
