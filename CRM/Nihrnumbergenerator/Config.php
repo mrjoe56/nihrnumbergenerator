@@ -34,6 +34,8 @@ class CRM_Nihrnumbergenerator_Config {
 
   public $invitedActivityTypeId;
 
+  public $studyParticipantIdIdentifier = "cih_study_participant_id";
+
   private function __construct() {
     $this->volunteerIdFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('nva_bioresource_id', 'nihr_volunteer_ids');
     $this->participantIdFieldId = CRM_Core_BAO_CustomField::getCustomFieldID('nva_participant_id', 'nihr_volunteer_ids');

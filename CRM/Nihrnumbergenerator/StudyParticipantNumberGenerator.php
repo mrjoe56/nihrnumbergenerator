@@ -55,6 +55,18 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
       );
       $existAlready = CRM_Core_DAO::singleValueQuery($sql, $sqlParams);
     } while ($existAlready);
+    // register new id as contact identifier
+    try {
+      civicrm_api3("Contact", "addidentity", [
+        'contact_id' => $contact_id,
+        'identifier' => $newId,
+        'identifier_type' => CRM_Nihrnumbergenerator_Config::singleton()->studyParticipantIdIdentifier,
+      ]);
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+      Civi::log()->warning(E::ts("Could not add study participant id ") . $newId .E::ts(" as new contact identifier for contact ID ")
+        . $contact_id . E::ts(", error from API Contact addidentity: ") . $ex->getMessage());
+    }
 
     return $newId;
   }

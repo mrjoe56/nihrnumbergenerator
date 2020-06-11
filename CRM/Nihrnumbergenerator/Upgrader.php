@@ -29,6 +29,69 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
   }
 
   /**
+   * Create contact identifier type for study participant id if it does not exist
+   * @return bool
+   */
+  public function upgrade_1020() {
+    $optionGroupName = "contact_id_history_type";
+    $optionValueName = "cih_study_participant_id";
+    $query = "SELECT COUNT(*)
+        FROM civicrm_option_group AS cog JOIN civicrm_option_value AS cov ON cog.id = cov.option_group_id
+        WHERE cog.name = %1 AND cov.name = %2";
+    $count = CRM_Core_DAO::singleValueQuery($query, [
+      1 => [$optionGroupName, "String"],
+      2 => [$optionValueName, "String"],
+    ]);
+    if ($count == 0) {
+      try {
+        civicrm_api3('OptionValue', 'create', [
+          'option_group_id' => $optionGroupName,
+          'name' => $optionValueName,
+          'value' => $optionValueName,
+          'is_active' => 1,
+          'label' => "Study Participant ID",
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $ex) {
+        Civi::log()->error(E::ts("Could not create contact identifier type for Study Participant ID in ")
+          . __METHOD__ . E::ts(", error from API OptionValue create: ") . $ex->getMessage());
+      }
+    }
+    $this->addExistingIdentifiers($optionValueName);
+    return TRUE;
+  }
+
+  /**
+   * Method to add existing study participant ID's as identifiers if they do not exist yet
+   *
+   * @param identifierType
+   */
+  private function addExistingIdentifiers($identifierType) {
+    $query = "SELECT cvnpd.nvpd_study_participant_id, cont.contact_id
+        FROM civicrm_value_nbr_participation_data AS cvnpd
+        JOIN civicrm_case AS part ON cvnpd.entity_id = part.id
+        JOIN civicrm_case_contact AS cont ON cvnpd.entity_id = cont.case_id
+        LEFT JOIN civicrm_value_contact_id_history AS ident ON ident.entity_id = cont.contact_id
+            AND ident.identifier_type = %1 AND cvnpd.nvpd_study_participant_id = ident.identifier
+        WHERE nvpd_study_participant_id IS NOT NULL AND part.is_deleted = %2 AND identifier IS NULL";
+    $dao = CRM_Core_DAO::executeQuery($query, [
+      1 => [$identifierType, "String"],
+      2 => [0, "Integer"],
+      ]);
+    while ($dao->fetch()) {
+      try {
+        civicrm_api3('Contact', 'addidentity', [
+          'contact_id' => $dao->contact_id,
+          'identifier' => $dao->nvpd_study_participant_id,
+          'identifier_type' => $identifierType,
+        ]);
+      }
+      catch (CiviCRM_API3_Exception $ex) {
+      }
+    }
+  }
+
+  /**
    * Method to set the sequence numbers
    */
   private function setSequenceNumbers() {
