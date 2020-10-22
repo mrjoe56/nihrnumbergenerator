@@ -6,47 +6,61 @@
 
 class CRM_Nihrnumbergenerator_ParticipantIdGenerator{
 
-  public static function generateNumber() {
+  /**
+   * Method to generate new participant id and save latest in setting
+   */
+  public static function generateParticipantId() {
     $config = CRM_Nihrnumbergenerator_Config::singleton();
-    // We need to generate a new number as an number does not exists for this participant in this study.
-    $sequenceNrSql = "
-            SELECT COUNT(DISTINCT `{$config->participantIdColumnName}`)
-            FROM `{$config->volunteerIdsTableName}`
-            WHERE `{$config->participantIdColumnName}` IS NOT NULL ";
-
-    $newSequenceNr = CRM_Core_DAO::singleValueQuery($sequenceNrSql);
-    $sql = "SELECT COUNT(*) FROM `{$config->volunteerIdsTableName}` WHERE `{$config->participantIdColumnName}` = %1";
-
-    do {
-      $newSequenceNr++;
-      $sequenceCode = str_pad($newSequenceNr, 8, 0, STR_PAD_LEFT);
-      $checkCharacter = CRM_Nihrnumbergenerator_Utils::generateCheckCharacter($newSequenceNr);
-      $newId = 'N'.$sequenceCode.$checkCharacter;
-      $sqlParams = array(
-        1 => array($newId, 'String'),
-      );
-      $existAlready = CRM_Core_DAO::singleValueQuery($sql, $sqlParams);
-    } while ($existAlready);
-
+    // first get latest sequence from setting
+    $latestSequence = Civi::settings()->get('nbr_participant_sequence');
+    // check if new participant id already exists in volunteer ids or as contact identifier and if so,
+    // generate new one
+    $newId = NULL;
+    $newIdCorrect = FALSE;
+    while (!$newIdCorrect) {
+      $latestSequence++;
+      $sequenceCode = str_pad($latestSequence, 8, 0, STR_PAD_LEFT);
+      $checkCharacter = CRM_Nihrnumbergenerator_Utils::generateCheckCharacter($latestSequence);
+      $newId = 'N' . $sequenceCode . $checkCharacter;
+      $volQuery = "SELECT COUNT(*) FROM " . $config->volunteerIdsTableName . " WHERE "
+        . $config->participantIdColumnName . " = %1";
+      $volCount = CRM_Core_DAO::singleValueQuery($volQuery, [1 => [$newId, "String"]]);
+      $idQuery = "SELECT COUNT(*) FROM " . $config->contactIdentityTableName . " WHERE identifier = %1
+      AND identifier_type = %2";
+      $idCount = CRM_Core_DAO::singleValueQuery($idQuery, [
+        1 => [$newId, "String"],
+        2 => [$config->participantIdentifierType, "String"],
+      ]);
+      if ($volCount == 0 && $idCount == 0) {
+        $newIdCorrect = TRUE;
+      }
+    }
+    Civi::settings()->set('nbr_participant_sequence', $latestSequence);
     return $newId;
   }
 
   /**
-   * Generate a new study participation number for a new particpation case.
+   * Generate a new participant id for a new contact.
    *
-   * @param $case_id
+   * @param $contactId
+   * @throws
    */
-  public static function createNewNumberForContact($contact_id) {
-    $count = civicrm_api3('Contact', 'getcount', array('id' => $contact_id, 'contact_sub_type' => ['IN' => ["nihr_volunteer"]]));
-    if ($count) {
+  public static function createNewParticipantIdForContact($contactId) {
+    $volunteer = new CRM_Nihrbackbone_NihrVolunteer();
+    if ($volunteer->isValidVolunteer($contactId)) {
       $config = CRM_Nihrnumbergenerator_Config::singleton();
-      $id = self::generateNumber();
-      $apiParams['custom_'.$config->participantIdFieldId] = $id;
-      $apiParams['entity_id'] = $contact_id;
-      try {
-        civicrm_api3('CustomValue', 'create', $apiParams);
-      } catch (Exception $e) {
-        echo $e->getMessage(); exit();
+      $id = self::generateParticipantId();
+      if ($id) {
+        $apiParams['custom_' . $config->participantIdFieldId] = $id;
+        $apiParams['entity_id'] = $contactId;
+        try {
+          civicrm_api3('CustomValue', 'create', $apiParams);
+        } catch (CiviCRM_API3_Exception $ex) {
+          new Exception("Error adding participant_id in " . __METHOD__, ", contact IT support mentioning error from CustomValue create API: " . $ex->getMessage());
+        }
+      }
+      else {
+        new Exception("Could not generate new participant id (id is empty) in " . __METHOD__, ", contact IT support!");
       }
     }
   }

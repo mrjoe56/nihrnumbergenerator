@@ -5,8 +5,8 @@ use CRM_Nihrnumbergenerator_ExtensionUtil as E;
 
 function nihrnumbergenerator_civicrm_post($op, $objectName, $id, &$objectRef) {
   if ($objectName == 'Individual' && $op == 'create') {
-    CRM_Nihrnumbergenerator_VolunteerNumberGenerator::createNewNumberForContact($id);
-    CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewNumberForContact($id);
+    CRM_Nihrnumbergenerator_BioResourceIdGenerator::createNewBioResourceIdForContact($id);
+    CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewParticipantIdForContact($id);
   }
   if ($objectName == 'Activity' && $op == 'create') {
     if (isset($objectRef->case_id) && CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::isValidActivityType($objectRef->activity_type_id)) {

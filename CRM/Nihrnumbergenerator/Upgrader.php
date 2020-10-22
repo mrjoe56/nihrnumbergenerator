@@ -15,7 +15,10 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
   public function install() {
     Civi::settings()->set('nbr_cbr_sequence', "0");
     Civi::settings()->set('nbr_nbr_sequence', "0");
-    $this->setSequenceNumbers();
+    Civi::settings()->set('nbr_bioresource_sequence', '0');
+    Civi::settings()->set('nbr_participant_sequence', '0');
+    $this->setStudyNumberSequences();
+    $this->setBioresourceParticipantSequences();
   }
 
   /**
@@ -24,7 +27,7 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
    * @return TRUE on success
    */
   public function upgrade_1010() {
-    $this->setSequenceNumbers();
+    $this->setStudyNumberSequences();
     return TRUE;
   }
 
@@ -62,9 +65,21 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
   }
 
   /**
+   * Set bioresource/participant sequence to correct value.
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_1030() {
+    $this->ctx->log->info(E::ts('Applying update 1030 - add bioresource and participant sequence'));
+    $this->setBioresourceParticipantSequences();
+    return TRUE;
+  }
+
+
+  /**
    * Method to add existing study participant ID's as identifiers if they do not exist yet
    *
-   * @param identifierType
+   * @param string $identifierType
    */
   private function addExistingIdentifiers($identifierType) {
     $query = "SELECT cvnpd.nvpd_study_participant_id, cont.contact_id
@@ -92,13 +107,42 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
   }
 
   /**
-   * Method to set the sequence numbers
+   * Method to set the study number sequence numbers
    */
-  private function setSequenceNumbers() {
+  private function setStudyNumberSequences() {
     $table = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyDataCustomGroup('table_name');
     $studyNumber = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCustomField('nsd_study_number', 'column_name');
-    $query = "SELECT " . $studyNumber . " AS study_number FROM " . $table . " WHERE " . $studyNumber . " LIKE %1";
-    Civi::settings()->set('nbr_nbr_sequence', $highest);
+    $query = "SELECT MAX( " . $studyNumber . ") FROM " . $table . " WHERE SUBSTRING(" . $studyNumber . ", 1, 3) = %1";
+    $cbrHighest = CRM_Core_DAO::singleValueQuery($query, [1 => ["CBR", "String"]]);
+    if ($cbrHighest) {
+      Civi::settings()->set('nbr_cbr_sequence', (int) str_replace("CBR", "", $cbrHighest));
+    }
+    $nbrHighest = CRM_Core_DAO::singleValueQuery($query, [1 => ["NBR", "String"]]);
+    if ($nbrHighest) {
+      Civi::settings()->set('nbr_nbr_sequence', (int) str_replace("NBR", "", $nbrHighest));
+    }
+  }
+
+  /**
+   * Method to set the participant_id and bioresource_id sequence numbers
+   */
+  private function setBioresourceParticipantSequences() {
+    $config = CRM_Nihrnumbergenerator_Config::singleton();
+    // get highest participant_id from volunteer_ids table
+    $partQuery = "SELECT CAST(MAX(SUBSTRING(" . $config->participantIdColumnName . ", 2, 8)) AS UNSIGNED) AS highest
+      FROM " . $config->volunteerIdsTableName;
+    $maxParticipant = (int) CRM_Core_DAO::singleValueQuery($partQuery);
+    // get highest participant_id from contact_history table
+    $idQuery = "SELECT CAST(MAX(SUBSTRING(identifier, 2, 8)) AS UNSIGNED) AS maxPart
+      FROM ". $config->contactIdentityTableName . " WHERE identifier_type = %1";
+    $maxIdentifier = (int) CRM_Core_DAO::singleValueQuery($idQuery, [1 => [$config->participantIdentifierType, "String"]]);
+    // set sequence to highest
+    if ($maxIdentifier > $maxParticipant) {
+      Civi::settings()->set('nbr_participant_sequence', $maxIdentifier);
+    }
+    else {
+      Civi::settings()->set('nbr_participant_sequence', $maxParticipant);
+    }
   }
 
   /**
