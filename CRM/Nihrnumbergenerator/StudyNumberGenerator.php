@@ -39,6 +39,8 @@ class CRM_Nihrnumbergenerator_StudyNumberGenerator {
         ];
         try {
           civicrm_api3('Campaign', 'create', $apiParams);
+          // if success, add study sequence number for study number if required
+          CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::create($studyId, $studyNumber);
         }
         catch (CiviCRM_API3_Exception $ex) {
           throw new API_Exception('Could not generate a study number, error message from Campaign create API: ' . $ex->getMessage());

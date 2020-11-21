@@ -1,4 +1,6 @@
 <?php
+use CRM_Nihrnumbergenerator_ExtensionUtil as E;
+
 /**
  * @author Jaap Jansma <jaap.jansma@civicoop.org>
  * @license AGPL-3.0
@@ -6,69 +8,49 @@
 
 class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
 
-  public static function generateNumber($study_number, $contact_id, $case_id) {
+  public static function generateNumber($studyNumber, $contactId, $caseId) {
     $config = CRM_Nihrnumbergenerator_Config::singleton();
-    // First check for an existing number, if it exists return it
-    $sql = "SELECT `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` AS `id`
-            FROM `{$config->participationDataTableName}` `participation_data`
-            INNER JOIN `civicrm_case_contact` `case_contact` ON `case_contact`.`case_id` = `participation_data`.`entity_id`
-            INNER JOIN `{$config->studyDataTableName}` `study_data` ON `study_data`.`entity_id` = `participation_data`.`{$config->participationDataStudyIdColumnName}`
-            WHERE `study_data`.`{$config->studyNrColumnName}` = %1 and `case_contact`.`contact_id` = %2 AND  `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` IS NOT NULL
-            ORDER BY id DESC
-            LIMIT 0, 1";
-    $sqlParams[1] = array($study_number, 'String');
-    $sqlParams[2] = array($contact_id, 'Integer');
-    $existingId = CRM_Core_DAO::singleValueQuery($sql, $sqlParams);
-    if ($existingId) {
-      return $existingId;
-    }
-
-    // We need to generate a new number as an number does not exists for this participant in this study.
-    $sequenceNrSql = "
-            SELECT COUNT(DISTINCT `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}`)
-            FROM `{$config->participationDataTableName}` `participation_data`
-            INNER JOIN `{$config->studyDataTableName}` `study_data` ON `study_data`.`entity_id` = `participation_data`.`{$config->participationDataStudyIdColumnName}`
-            WHERE `study_data`.`{$config->studyNrColumnName}` = %1 AND `participation_data`.`{$config->participationDataStudyParticipantIdColumnName}` IS NOT NULL ";
-    $sequenceNrSqlParams[1] = array($study_number, 'String');
-    $newSequenceNr = CRM_Core_DAO::singleValueQuery($sequenceNrSql, $sequenceNrSqlParams);
-    $sql = "SELECT COUNT(*) FROM `{$config->participationDataTableName}` WHERE `{$config->participationDataStudyParticipantIdColumnName}` = %1";
-
-    $studyNumberWithouthPrefix = preg_replace("#(NBR|CBR-?)([0-9]+)#", "$2", $study_number);
-    if (strpos($study_number, 'CBR') !== FALSE) {
-      $studyCode = 'S' . str_pad($studyNumberWithouthPrefix, 3, 0, STR_PAD_LEFT);
-    } else {
-      $studyCode = 'SP' . str_pad($studyNumberWithouthPrefix, 4, 0, STR_PAD_LEFT);
-    }
-
-    do {
-      $newSequenceNr++;
-      if (strpos($study_number, 'CBR') !== FALSE) {
-        $sequenceCode = str_pad($newSequenceNr, 5, 0, STR_PAD_LEFT);
+    // only if there is no study participant id for this contact in the study yet
+    if (!CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::existsForContact($studyNumber, $contactId)) {
+      // find sequence for study
+      $sequence = CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::getStudySequence($studyNumber);
+      if ($sequence) {
+        $sequence++;
+        $studyNumberWithouthPrefix = preg_replace("#(NBR|CBR-?)([0-9]+)#", "$2", $studyNumber);
+        // studyCode = "S" if first 3 chars of study number are "CBR", else "SP"
+        $studyCode = 'SP' . str_pad($studyNumberWithouthPrefix, 4, 0, STR_PAD_LEFT);
+        $sequenceCode = str_pad($sequence, 7, 0, STR_PAD_LEFT);
+        if (substr($studyNumber, 0, 3) == "CBR") {
+          $studyCode = 'S' . str_pad($studyNumberWithouthPrefix, 3, 0, STR_PAD_LEFT);
+          $sequenceCode = str_pad($sequence, 5, 0, STR_PAD_LEFT);
+        }
+        // new ID = studyCode + padded new sequence + check character
+        $checkCharacter = CRM_Nihrnumbergenerator_Utils::generateCheckCharacter($sequence);
+        $newId = $studyCode . $sequenceCode . $checkCharacter;
+        // update sequence for study
+        CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::updateStudySequence($studyNumber, $sequence);
+        // generate contact identifier
+        try {
+          civicrm_api3("Contact", "addidentity", [
+            'contact_id' => $contactId,
+            'identifier' => $newId,
+            'identifier_type' => CRM_Nihrnumbergenerator_Config::singleton()->studyParticipantIdIdentifier,
+          ]);
+        }
+        catch (CiviCRM_API3_Exception $ex) {
+          Civi::log()->warning(E::ts("Could not add study participant id ") . $newId .E::ts(" as new contact identifier for contact ID ")
+            . $contactId . E::ts(", error from API Contact addidentity: ") . $ex->getMessage());
+        }
+        // return new id
+        return $newId;
       }
       else {
-        $sequenceCode = str_pad($newSequenceNr, 7, 0, STR_PAD_LEFT);
+        $message = "Could not generate Study Participant ID for contact ID " . $contactId
+          . ", case ID " . $caseId . " and study number " . $studyNumber . ", please contact ICT support!";
+        Civi::log()->error($message);
+        throw new Exception($message);
       }
-      $checkCharacter = CRM_Nihrnumbergenerator_Utils::generateCheckCharacter($newSequenceNr);
-      $newId = $studyCode.$sequenceCode.$checkCharacter;
-      $sqlParams = array(
-        1 => array($newId, 'String'),
-      );
-      $existAlready = CRM_Core_DAO::singleValueQuery($sql, $sqlParams);
-    } while ($existAlready);
-    // register new id as contact identifier
-    try {
-      civicrm_api3("Contact", "addidentity", [
-        'contact_id' => $contact_id,
-        'identifier' => $newId,
-        'identifier_type' => CRM_Nihrnumbergenerator_Config::singleton()->studyParticipantIdIdentifier,
-      ]);
     }
-    catch (CiviCRM_API3_Exception $ex) {
-      Civi::log()->warning(E::ts("Could not add study participant id ") . $newId .E::ts(" as new contact identifier for contact ID ")
-        . $contact_id . E::ts(", error from API Contact addidentity: ") . $ex->getMessage());
-    }
-
-    return $newId;
   }
 
   /**

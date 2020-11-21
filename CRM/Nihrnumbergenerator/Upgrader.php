@@ -75,6 +75,19 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
     return TRUE;
   }
 
+  /**
+   * Add table for study sequence number if not exists
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_1040() {
+    $this->ctx->log->info(E::ts('Applying update 1040 - add table for study sequence number'));
+    if (!CRM_Core_DAO::checkTableExists("civicrm_study_participant_sequence")) {
+      $this->executeSqlFile('sql/auto_install.sql');
+    }
+    return TRUE;
+  }
+
 
   /**
    * Method to add existing study participant ID's as identifiers if they do not exist yet

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+
+<table>
+  <base>CRM/Nihrnumbergenerator</base>
+  <class>StudyParticipantSequence</class>
+  <name>civicrm_study_participant_sequence</name>
+  <comment>NIHR Bioresource study participant sequence table</comment>
+  <log>true</log>
+
+  <field>
+    <name>id</name>
+    <type>int unsigned</type>
+    <required>true</required>
+    <comment>Unique StudyParticipantSequence ID</comment>
+  </field>
+  <primaryKey>
+    <name>id</name>
+    <autoincrement>true</autoincrement>
+  </primaryKey>
+
+  <field>
+    <name>study_number</name>
+    <type>varchar</type>
+    <length>32</length>
+    <comment>Study Number</comment>
+  </field>
+
+  <field>
+    <name>sequence</name>
+    <type>int unsigned</type>
+    <comment>Sequence number for study participant id</comment>
+  </field>
+  <index>
+    <name>index_study_number</name>
+    <fieldName>study_number</fieldName>
+    <unique>true</unique>
+  </index>
+
+</table>
