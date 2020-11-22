@@ -54,3 +54,17 @@ function civicrm_api3_study_participant_sequence_delete($params) {
 function civicrm_api3_study_participant_sequence_get($params) {
   return _civicrm_api3_basic_get(_civicrm_api3_get_BAO(__FUNCTION__), $params, TRUE, 'StudyParticipantSequence');
 }
+/**
+ * StudyParticipantSequence.existcreate API.
+ *
+ * @param array $params
+ *
+ * @return array
+ *   API result descriptor
+ *
+ * @throws API_Exception
+ */
+function civicrm_api3_study_participant_sequence_existcreate($params) {
+  CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::setExistingStudySequences();
+  return civicrm_api3_create_success([], [], 'StudyParticipantSequence', 'existcreate');
+}

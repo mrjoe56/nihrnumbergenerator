@@ -130,4 +130,68 @@ class CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence extends CRM_Nihrnumbe
      ]);
   }
 
+  /**
+   * Method to set the sequences for the studies in the DB that do not have one yet
+   */
+  public static function setExistingStudySequences() {
+    $currentStudies = self::getCurrentStudiesWithMaxSequences();
+    // add to sequence table if it does not exist yet
+    foreach ($currentStudies as $studyNumber => $sequence) {
+      if (!self::sequenceExists($studyNumber)) {
+        $insert = "INSERT INTO civicrm_study_participant_sequence (study_number, sequence) VALUES(%1, %2)";
+        CRM_Core_DAO::executeQuery($insert, [
+          1 => [$studyNumber, "String"],
+          2 => [(int) $sequence, "Integer"],
+        ]);
+      }
+    }
+  }
+
+  /**
+   * Method to get the current CBR and NBR studies and maximum sequence numbers
+   * @return mixed
+   */
+  private static function getCurrentStudiesWithMaxSequences() {
+    $currentStudies = [];
+    $studyTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyDataCustomGroup('table_name');
+    $studyNumberColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCustomField('nsd_study_number', 'column_name');
+    $participationTable = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationDataCustomGroup('table_name');
+    $studyParticipationIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_participant_id', 'column_name');
+    $studyIdColumn = CRM_Nihrbackbone_BackboneConfig::singleton()->getParticipationCustomField('nvpd_study_id', 'column_name');
+    $maxCbrQuery = "SELECT MAX(CAST(SUBSTR(" . $studyParticipationIdColumn . ", 5, 5) AS UNSIGNED))
+        FROM ". $participationTable . " WHERE ". $studyIdColumn . " = %1";
+    $maxNbrQuery = "SELECT MAX(CAST(SUBSTR(" . $studyParticipationIdColumn . ", 7, 7) AS UNSIGNED))
+        FROM ". $participationTable . " WHERE ". $studyIdColumn . " = %1";
+    // first get all studies, ignore the dots and segment CBR and NBR
+    $study = CRM_Core_DAO::executeQuery("SELECT DISTINCT(" . $studyNumberColumn . ") AS study_number,
+      entity_id AS study_id FROM " . $studyTable);
+    while ($study->fetch()) {
+      $coreNumber = self::getCoreStudyNumber($study->study_number);
+      switch (substr($coreNumber, 0, 3)) {
+        case "CBR":
+          // get max study participation id for study
+          $maxSequence = CRM_Core_DAO::singleValueQuery($maxCbrQuery, [1 => [$study->study_id, "Integer"]]);
+          break;
+
+        case "NBR":
+          // get max study participation id for study
+          $maxSequence = CRM_Core_DAO::singleValueQuery($maxNbrQuery, [1 => [$study->study_id, "Integer"]]);
+          break;
+      }
+      if ($maxSequence) {
+        // add if it does not exist OR if it does but max is higher
+        if (!isset($currentStudies[$coreNumber]) || $maxSequence > $currentStudies[$coreNumber]) {
+          $currentStudies[$coreNumber] = $maxSequence;
+        }
+      }
+      else {
+        // if no max sequence yet, sequence = 0
+        if (!isset($currentStudies[$coreNumber])) {
+          $currentStudies[$coreNumber] = 0;
+        }
+      }
+    }
+    return $currentStudies;
+  }
+
 }

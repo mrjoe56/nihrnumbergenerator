@@ -85,6 +85,8 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
     if (!CRM_Core_DAO::checkTableExists("civicrm_study_participant_sequence")) {
       $this->executeSqlFile('sql/auto_install.sql');
     }
+    // set sequences for existing studies if required
+    CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::setExistingStudySequences();
     return TRUE;
   }
 
