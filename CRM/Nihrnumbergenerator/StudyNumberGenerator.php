@@ -34,13 +34,13 @@ class CRM_Nihrnumbergenerator_StudyNumberGenerator {
         $studyNumber = $prefix . $sequence;
         $studyNumberCustomField = "custom_" . CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCustomField('nsd_study_number', 'id');
         $apiParams = [
-          'id' => $studyId,
+          'id' => (int) $studyId,
           $studyNumberCustomField => $studyNumber,
         ];
         try {
           civicrm_api3('Campaign', 'create', $apiParams);
           // if success, add study sequence number for study number if required
-          CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::create($studyId, $studyNumber);
+          CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::create($studyNumber);
         }
         catch (CiviCRM_API3_Exception $ex) {
           throw new API_Exception('Could not generate a study number, error message from Campaign create API: ' . $ex->getMessage());

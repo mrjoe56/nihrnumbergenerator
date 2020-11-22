@@ -11,11 +11,11 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
   public static function generateNumber($studyNumber, $contactId, $caseId) {
     $config = CRM_Nihrnumbergenerator_Config::singleton();
     // only if there is no study participant id for this contact in the study yet
-    if (!CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::existsForContact($studyNumber, $contactId)) {
+    $currentId = CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::existsForContact($studyNumber, $contactId);
+    if (!$currentId) {
       // find sequence for study
       $sequence = CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::getStudySequence($studyNumber);
       if ($sequence) {
-        $sequence++;
         $studyNumberWithouthPrefix = preg_replace("#(NBR|CBR-?)([0-9]+)#", "$2", $studyNumber);
         // studyCode = "S" if first 3 chars of study number are "CBR", else "SP"
         $studyCode = 'SP' . str_pad($studyNumberWithouthPrefix, 4, 0, STR_PAD_LEFT);
@@ -51,6 +51,7 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
         throw new Exception($message);
       }
     }
+    return $currentId;
   }
 
   /**
