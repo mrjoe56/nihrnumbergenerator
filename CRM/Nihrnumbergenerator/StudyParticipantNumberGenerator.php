@@ -17,6 +17,9 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
       $sequence = CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::getStudySequence($studyNumber);
       if ($sequence) {
         $studyNumberWithouthPrefix = preg_replace("#(NBR|CBR-?)([0-9]+)#", "$2", $studyNumber);
+        // only take bit before dot it there is a dot
+        $numberParts = explode(".", $studyNumberWithouthPrefix);
+        $studyNumberWithouthPrefix = $numberParts[0];
         // studyCode = "S" if first 3 chars of study number are "CBR", else "SP"
         $studyCode = 'SP' . str_pad($studyNumberWithouthPrefix, 4, 0, STR_PAD_LEFT);
         $sequenceCode = str_pad($sequence, 7, 0, STR_PAD_LEFT);
