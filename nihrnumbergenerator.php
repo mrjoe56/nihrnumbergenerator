@@ -5,8 +5,14 @@ use CRM_Nihrnumbergenerator_ExtensionUtil as E;
 
 function nihrnumbergenerator_civicrm_post($op, $objectName, $id, &$objectRef) {
   if ($objectName == 'Individual' && $op == 'create') {
-    CRM_Nihrnumbergenerator_BioResourceIdGenerator::createNewBioResourceIdForContact($id);
-    CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewParticipantIdForContact($id);
+    if (CRM_Core_Transaction::isActive()) {
+      CRM_Core_Transaction::addCallback(CRM_Core_Transaction::PHASE_POST_COMMIT, 'CRM_Nihrnumbergenerator_BioResourceIdGenerator::createNewBioResourceIdForContact', [$id]);
+      CRM_Core_Transaction::addCallback(CRM_Core_Transaction::PHASE_POST_COMMIT, 'CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewParticipantIdForContact', [$id]);
+    }
+    else {
+      CRM_Nihrnumbergenerator_BioResourceIdGenerator::createNewBioResourceIdForContact($id);
+      CRM_Nihrnumbergenerator_ParticipantIdGenerator::createNewParticipantIdForContact($id);
+    }
   }
   if ($objectName == 'Activity' && $op == 'create') {
     if (isset($objectRef->case_id) && CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator::isValidActivityType($objectRef->activity_type_id)) {
