@@ -28,21 +28,23 @@ class CRM_Nihrnumbergenerator_BioResourceIdGenerator {
    */
   public static function createNewBioResourceIdForContact($contactId) {
     $volunteer = new CRM_Nihrbackbone_NihrVolunteer();
-    if ($volunteer->isValidVolunteer($contactId)) {
-      $config = CRM_Nihrnumbergenerator_Config::singleton();
-      $randomNr = self::generateNumber();
-      if ($randomNr) {
-        $apiParams['custom_'.$config->bioresourceIdFieldId] = $randomNr;
-        $apiParams['entity_id'] = $contactId;
-        try {
-          civicrm_api3('CustomValue', 'create', $apiParams);
+    if ($volunteer->isValidVolunteer($contactId, 'bioresource')) {
+      if (!$volunteer->hasBioResourceId($contactId)) {
+        $config = CRM_Nihrnumbergenerator_Config::singleton();
+        $randomNr = self::generateNumber();
+        if ($randomNr) {
+          $apiParams['custom_'.$config->bioresourceIdFieldId] = $randomNr;
+          $apiParams['entity_id'] = $contactId;
+          try {
+            civicrm_api3('CustomValue', 'create', $apiParams);
+          }
+          catch (CiviCRM_API3_Exception $ex) {
+            new Exception("Error adding bioresource_id in " . __METHOD__, ", contact IT support mentioning error from CustomValue create API: " . $ex->getMessage());
+          }
         }
-        catch (CiviCRM_API3_Exception $ex) {
-          new Exception("Error adding bioresource_id in " . __METHOD__, ", contact IT support mentioning error from CustomValue create API: " . $ex->getMessage());
+        else {
+          new Exception("Could not generate new bioresource id (id is empty) in " . __METHOD__, ", contact IT support!");
         }
-      }
-      else {
-        new Exception("Could not generate new bioresource id (id is empty) in " . __METHOD__, ", contact IT support!");
       }
     }
   }

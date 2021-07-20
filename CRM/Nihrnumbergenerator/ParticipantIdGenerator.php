@@ -47,20 +47,22 @@ class CRM_Nihrnumbergenerator_ParticipantIdGenerator{
    */
   public static function createNewParticipantIdForContact($contactId) {
     $volunteer = new CRM_Nihrbackbone_NihrVolunteer();
-    if ($volunteer->isValidVolunteer($contactId)) {
-      $config = CRM_Nihrnumbergenerator_Config::singleton();
-      $id = self::generateParticipantId();
-      if ($id) {
-        $apiParams['custom_' . $config->participantIdFieldId] = $id;
-        $apiParams['entity_id'] = $contactId;
-        try {
-          civicrm_api3('CustomValue', 'create', $apiParams);
-        } catch (CiviCRM_API3_Exception $ex) {
-          new Exception("Error adding participant_id in " . __METHOD__, ", contact IT support mentioning error from CustomValue create API: " . $ex->getMessage());
+    if ($volunteer->isValidVolunteer($contactId, 'participant')) {
+      if (!$volunteer->hasParticipantId($contactId)) {
+        $config = CRM_Nihrnumbergenerator_Config::singleton();
+        $id = self::generateParticipantId();
+        if ($id) {
+          $apiParams['custom_' . $config->participantIdFieldId] = $id;
+          $apiParams['entity_id'] = $contactId;
+          try {
+            civicrm_api3('CustomValue', 'create', $apiParams);
+          } catch (CiviCRM_API3_Exception $ex) {
+            new Exception("Error adding participant_id in " . __METHOD__, ", contact IT support mentioning error from CustomValue create API: " . $ex->getMessage());
+          }
         }
-      }
-      else {
-        new Exception("Could not generate new participant id (id is empty) in " . __METHOD__, ", contact IT support!");
+        else {
+          new Exception("Could not generate new participant id (id is empty) in " . __METHOD__, ", contact IT support!");
+        }
       }
     }
   }
