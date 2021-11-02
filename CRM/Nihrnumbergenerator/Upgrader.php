@@ -90,6 +90,35 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
     return TRUE;
   }
 
+  /**
+   * Set custom group for volunteer id's to be valid for both volunteer and guardian
+   *
+   * @return TRUE on success
+   */
+  public function upgrade_1050() {
+    $this->ctx->log->info(E::ts('Applying update 1050 - set custom group for volunteer ids to be valid for both volunteer and guardian'));
+    $customGroupId = CRM_Nihrbackbone_BackboneConfig::singleton()->getVolunteerIdsCustomGroup('id');
+    if ($customGroupId) {
+      try {
+        \Civi\Api4\CustomGroup::update()
+          ->addWhere('id', '=', (int) $customGroupId)
+          ->addValue('extends_entity_column_value', [
+            'nihr_volunteer',
+            'nbr_guardian',
+          ])
+          ->execute();
+      }
+      catch (API_Exception $ex) {
+        Civi::log()->error(E::ts("Could not change custom group for volunteer ID's to be for sub types Volunteer and Guardian,
+        please do this manually. Error from API4 CustomGroup update: ") . $ex->getMessage());
+      }
+    }
+    else {
+      Civi::log()->error(E::ts("Could not change custom group for volunteer ID's to be for sub types Volunteer and Guardian,
+        please do this manually."));
+    }
+    return TRUE;
+  }
 
   /**
    * Method to add existing study participant ID's as identifiers if they do not exist yet
