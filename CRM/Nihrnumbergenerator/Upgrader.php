@@ -15,6 +15,7 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
   public function install() {
     Civi::settings()->set('nbr_cbr_sequence', "0");
     Civi::settings()->set('nbr_nbr_sequence', "0");
+    Civi::settings()->set('nbr_daa_sequence', "128");
     Civi::settings()->set('nbr_bioresource_sequence', '0');
     Civi::settings()->set('nbr_participant_sequence', '0');
     $this->setStudyNumberSequences();
@@ -117,6 +118,11 @@ class CRM_Nihrnumbergenerator_Upgrader extends CRM_Nihrnumbergenerator_Upgrader_
       Civi::log()->error(E::ts("Could not change custom group for volunteer ID's to be for sub types Volunteer and Guardian,
         please do this manually."));
     }
+    return TRUE;
+  }
+  public function upgrade_1060() {
+    $this->ctx->log->info(E::ts('Applying update 1060 - add sequence for DAA study'));
+    Civi::settings()->set('nbr_daa_sequence', "128");
     return TRUE;
   }
 

@@ -1,3 +1,6 @@
+## Version 1.13
+* add study number generation for DAA (see https://www.wrike.com/open.htm?id=861443868)
+
 ## Version 1.12
 * add nbr_guardian as valid contact sub type for volunteer ids custom group, see https://www.wrike.com/open.htm?id=769959943
 

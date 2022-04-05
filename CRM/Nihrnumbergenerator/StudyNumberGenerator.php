@@ -17,18 +17,27 @@ class CRM_Nihrnumbergenerator_StudyNumberGenerator {
     // only if study campaign type
     if (isset($objectRef->campaign_type_id)) {
       if ($objectRef->campaign_type_id == CRM_Nihrbackbone_BackboneConfig::singleton()->getStudyCampaignTypeId()) {
-        $centre = CRM_Nihrbackbone_NbrStudy::getCentreOfOrigin($studyId);
-        if ($centre && $centre == CRM_Nihrnumbergenerator_Config::singleton()->cambridgeCenterName) {
-          $prefix = 'CBR';
-          $sequence = Civi::settings()->get('nbr_cbr_sequence');
+        // if study type is data only, generate DAA number
+        if (CRM_Nihrbackbone_NbrStudy::isDataOnly($studyId)) {
+          $prefix = 'DAA';
+          $sequence = Civi::settings()->get('nbr_daa_sequence');
           $sequence++;
-          Civi::settings()->set('nbr_cbr_sequence', $sequence);
+          Civi::settings()->set('nbr_daa_sequence', $sequence);
         }
         else {
-          $prefix = 'NBR';
-          $sequence = Civi::settings()->get('nbr_nbr_sequence');
-          $sequence++;
-          Civi::settings()->set('nbr_nbr_sequence', $sequence);
+          $centre = CRM_Nihrbackbone_NbrStudy::getCentreOfOrigin($studyId);
+          if ($centre && $centre == CRM_Nihrnumbergenerator_Config::singleton()->cambridgeCenterName) {
+            $prefix = 'CBR';
+            $sequence = Civi::settings()->get('nbr_cbr_sequence');
+            $sequence++;
+            Civi::settings()->set('nbr_cbr_sequence', $sequence);
+          }
+          else {
+            $prefix = 'NBR';
+            $sequence = Civi::settings()->get('nbr_nbr_sequence');
+            $sequence++;
+            Civi::settings()->set('nbr_nbr_sequence', $sequence);
+          }
         }
         // add prefix to id and save in study number field
         $studyNumber = $prefix . $sequence;
