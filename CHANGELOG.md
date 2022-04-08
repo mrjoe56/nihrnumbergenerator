@@ -1,3 +1,6 @@
+## Version 1.14
+* add study participant number generation for DAA (see https://www.wrike.com/open.htm?id=874606145)
+
 ## Version 1.13
 * add study number generation for DAA (see https://www.wrike.com/open.htm?id=861443868)
 

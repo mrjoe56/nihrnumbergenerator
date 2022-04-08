@@ -16,16 +16,25 @@ class CRM_Nihrnumbergenerator_StudyParticipantNumberGenerator {
       // find sequence for study
       $sequence = CRM_Nihrnumbergenerator_BAO_StudyParticipantSequence::getStudySequence($studyNumber);
       if ($sequence) {
-        $studyNumberWithouthPrefix = preg_replace("#(NBR|CBR-?)([0-9]+)#", "$2", $studyNumber);
+        $studyNumberWithouthPrefix = preg_replace("#(NBR|DAA|CBR-?)([0-9]+)#", "$2", $studyNumber);
         // only take bit before dot it there is a dot
         $numberParts = explode(".", $studyNumberWithouthPrefix);
         $studyNumberWithouthPrefix = $numberParts[0];
-        // studyCode = "S" if first 3 chars of study number are "CBR", else "SP"
-        $studyCode = 'SP' . str_pad($studyNumberWithouthPrefix, 4, 0, STR_PAD_LEFT);
-        $sequenceCode = str_pad($sequence, 7, 0, STR_PAD_LEFT);
-        if (substr($studyNumber, 0, 3) == "CBR") {
-          $studyCode = 'S' . str_pad($studyNumberWithouthPrefix, 3, 0, STR_PAD_LEFT);
-          $sequenceCode = str_pad($sequence, 5, 0, STR_PAD_LEFT);
+        // studyCode depending on first 3 chars of study number
+        $studySubstr = substr($studyNumber, 0, 3);
+        switch ($studySubstr) {
+          case "CBR":
+            $studyCode = 'S' . str_pad($studyNumberWithouthPrefix, 3, 0, STR_PAD_LEFT);
+            $sequenceCode = str_pad($sequence, 5, 0, STR_PAD_LEFT);
+            break;
+          case "DAA":
+            $studyCode = 'SD' . str_pad($studyNumberWithouthPrefix, 4, 0, STR_PAD_LEFT);
+            $sequenceCode = str_pad($sequence, 7, 0, STR_PAD_LEFT);
+            break;
+          default:
+            $studyCode = 'SP' . str_pad($studyNumberWithouthPrefix, 4, 0, STR_PAD_LEFT);
+            $sequenceCode = str_pad($sequence, 7, 0, STR_PAD_LEFT);
+            break;
         }
         // new ID = studyCode + padded new sequence + check character
         $checkCharacter = CRM_Nihrnumbergenerator_Utils::generateCheckCharacter($sequence);
